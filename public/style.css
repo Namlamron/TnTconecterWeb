@@ -1,0 +1,43 @@
+body {
+    font-family: Arial, sans-serif;
+    margin: 0;
+    padding: 20px;
+    background-color: #f4f4f4;
+}
+
+h1 {
+    text-align: center;
+}
+
+#messages-container {
+    display: flex; /* Use flexbox to layout children */
+    justify-content: space-between; /* Space out the two sections */
+    max-width: 1200px; /* Optional max width for the layout */
+    margin: 0 auto; /* Center the layout */
+}
+
+#messages, #activity {
+    width: 48%; /* Each section takes 48% of the container width */
+    background-color: white; /* Background color for each section */
+    padding: 15px;
+    border-radius: 5px; /* Rounded corners */
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1); /* Light shadow for depth */
+}
+
+#activity-feed {
+    list-style-type: none;
+    padding: 0;
+}
+
+#activity-feed li, #chat-messages li {
+    padding: 10px;
+    border-bottom: 1px solid #ddd;
+}
+
+#activity-feed li:last-child, #chat-messages li:last-child {
+    border-bottom: none;
+}
+
+h2 {
+    margin-top: 0; /* Remove margin from top of headings */
+}

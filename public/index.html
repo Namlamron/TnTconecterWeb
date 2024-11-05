@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Live Stream Viewer</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <h1>Live Stream Viewer</h1>
+    <div id="messages-container"> <!-- New container for layout -->
+        <div id="messages">
+            <h2>Chat Messages</h2>
+            <ul id="chat-messages"></ul>
+        </div>
+        <div id="activity"> <!-- New container for activity feed -->
+            <h2>Activity Feed</h2>
+            <ul id="activity-feed"></ul>
+        </div>
+    </div>
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>
