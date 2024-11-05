@@ -1,6 +1,7 @@
 Connects to both tiktok and Twtich. shows chat and events seperetly but platforms are combined
 
 Before you start IN server.js change 
+
 // TikTok Username
 let tiktokUsername = "yourtiktokUsername";
 
