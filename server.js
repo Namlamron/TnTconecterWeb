@@ -10,7 +10,6 @@ const app = express();
 const server = http.createServer(app);
 const io = socketIo(server);
 
-console.log("Twitch OAuth Token:", process.env.TWITCH_OAUTH_TOKEN);
 
 // Access environment variables using process.env
 const tiktokUsername = process.env.TIKTOK_USERNAME;
