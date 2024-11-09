@@ -1,19 +1,28 @@
+require('dotenv').config();  // Load .env file
+
 const express = require('express');
 const http = require('http');
 const socketIo = require('socket.io');
-const tiktok = require('./platforms/tiktok');  // Import the TikTok module
-const twitch = require('./platforms/twitch');  // Import the Twitch module
+const tiktok = require('./platforms/tiktok');  // Corrected path
+const twitch = require('./platforms/twitch');  // Corrected path
 
 const app = express();
 const server = http.createServer(app);
 const io = socketIo(server);
 
+console.log("Twitch OAuth Token:", process.env.TWITCH_OAUTH_TOKEN);
+
+// Access environment variables using process.env
+const tiktokUsername = process.env.TIKTOK_USERNAME;
+const twitchUsername = process.env.TWITCH_USERNAME;
+const twitchOauthToken = process.env.TWITCH_OAUTH_TOKEN;
+
 // Serve static files
 app.use(express.static('public'));
 
 // Initialize TikTok and Twitch connections
-tiktok(io);  // Pass the `io` instance to TikTok
-twitch(io);  // Pass the `io` instance to Twitch
+tiktok(io, tiktokUsername);  // Pass the TikTok username
+twitch(io, twitchUsername, twitchOauthToken);  // Pass the Twitch username and OAuth token
 
 // Clean up on exit
 process.on('SIGINT', () => {

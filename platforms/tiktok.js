@@ -1,13 +1,9 @@
 const { WebcastPushConnection } = require('tiktok-live-connector');
 
-// TikTok Username
-let tiktokUsername = "namlamron";
+function initializeTikTok(io, tiktokUsername) {
+    let tiktokLiveConnection = new WebcastPushConnection(tiktokUsername);
 
-// Create a TikTok Live connection
-let tiktokLiveConnection = new WebcastPushConnection(tiktokUsername);
-
-// Function to initialize and manage the TikTok connection
-function initializeTikTok(io) {
+    // Function to initialize and manage the TikTok connection
     function connectToTikTok() {
         tiktokLiveConnection.connect()
             .then(state => {
@@ -56,7 +52,7 @@ function disconnect() {
     tiktokLiveConnection.disconnect();
 }
 
-module.exports = (io) => {
-    initializeTikTok(io);
+module.exports = (io, tiktokUsername) => {
+    initializeTikTok(io, tiktokUsername);
     return { disconnect };
 };

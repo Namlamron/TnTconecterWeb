@@ -1,16 +1,15 @@
 const tmi = require('tmi.js');
 
-// Twitch configuration
-const twitchClient = new tmi.Client({
-    options: { debug: true },
-    identity: {
-        username: 'namlamron',
-        password: 'oauth:s0g3k7olhg0r8vqkrt835n9lfq592j' // Obtain at https://twitchapps.com/tmi/
-    },
-    channels: ['namlamron'] // Replace with the Twitch channel to connect to
-});
+function initializeTwitch(io, twitchUsername, twitchOauthToken) {
+    const twitchClient = new tmi.Client({
+        options: { debug: true },
+        identity: {
+            username: twitchUsername,
+            password: twitchOauthToken,  // Use OAuth token from .env
+        },
+        channels: [twitchUsername]
+    });
 
-function initializeTwitch(io) {
     // Connect Twitch client
     twitchClient.connect()
         .then(() => {
@@ -39,7 +38,7 @@ function disconnect() {
     twitchClient.disconnect();
 }
 
-module.exports = (io) => {
-    initializeTwitch(io);
+module.exports = (io, twitchUsername, twitchOauthToken) => {
+    initializeTwitch(io, twitchUsername, twitchOauthToken);
     return { disconnect };
 };
