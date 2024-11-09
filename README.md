@@ -1,19 +1,11 @@
 Connects to both tiktok and Twtich. shows chat and events seperetly but platforms are combined
 
-Before you start 
+Make a .env (yes NO name literaly just .env)
 
-IN server.js change 
+Then paste these in and fill them out
 
-// TikTok Username
-
-tiktokUsername = "yourtiktokUsername";
-
-// Twitch configuration
-
-username: 'YourTwitchusername', 
-
-password:'oauth: Get this ' // Obtain at https://twitchapps.com/tmi/
-
-channels: ['Twitch channel name'] // Replace with the Twitch channel to connect to
-
-Then anytime after you just have to run the Start.bat file
+TIKTOK_USERNAME=
+TWITCH_USERNAME=
+TWITCH_CHANNEL=
+TWITCH_OAUTH_TOKEN=         (Get at https://twitchapps.com/tmi/ )
+PORT=
