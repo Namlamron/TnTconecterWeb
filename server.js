@@ -27,15 +27,34 @@ const twitchClient = new tmi.Client({
 // Create a TikTok Live connection
 let tiktokLiveConnection = new WebcastPushConnection(tiktokUsername);
 
-// TikTok Live Connection
-tiktokLiveConnection.connect()
-    .then(state => {
-        console.info(`Connected to TikTok roomId ${state.roomId}`);
-        io.emit('status', { message: "Connected to TikTok" });
-    })
-    .catch(err => {
-        console.error('Failed to connect to TikTok', err);
-    });
+// Function to connect to TikTok with retry logic
+function connectToTikTok() {
+    tiktokLiveConnection.connect()
+        .then(state => {
+            console.info(`Connected to TikTok roomId ${state.roomId}`);
+            io.emit('status', { message: "Connected to TikTok" });
+        })
+        .catch(err => {
+            console.error('Failed to connect to TikTok', err);
+            // Retry after 30 seconds if the initial connection fails
+            setTimeout(connectToTikTok, 30000);
+        });
+}
+
+// Initial TikTok connection
+connectToTikTok();
+
+// Set up a 20-minute interval to reset the TikTok connection
+setInterval(() => {
+    console.info("Resetting TikTok connection...");
+    tiktokLiveConnection.disconnect()
+        .then(() => connectToTikTok())
+        .catch(err => {
+            console.error("Failed to reset TikTok connection:", err);
+            // Retry connection after 30 seconds if disconnection fails
+            setTimeout(connectToTikTok, 30000);
+        });
+}, 1200000); // 20 minutes in milliseconds
 
 // Connect Twitch client
 twitchClient.connect()
@@ -48,24 +67,24 @@ twitchClient.connect()
 // Handle TikTok events
 /*
 tiktokLiveConnection.on('member', data => {
-    console.log(`${data.uniqueId} joined TikTok stream`);
-    io.emit('tiktokMember', data.uniqueId);
+    console.log(`${data.nickname} joined TikTok stream`);
+    io.emit('tiktokMember', data.nickname);
 });
 */
 tiktokLiveConnection.on('chat', data => {
-    console.log(`TikTok ${data.uniqueId} says: ${data.comment}`);
-    io.emit('tiktokChat', { user: data.uniqueId, message: data.comment });
+    console.log(`TikTok ${data.nickname} says: ${data.comment}`);
+    io.emit('tiktokChat', { user: data.nickname, message: data.comment });
 });
 
 tiktokLiveConnection.on('gift', data => {
-    console.log(`TikTok ${data.uniqueId} sent a gift: ${data.giftName} (x${data.repeatCount})`);
-    io.emit('tiktokGift', { user: data.uniqueId, gift: data.giftName, count: data.repeatCount });
+    console.log(`TikTok ${data.nickname} sent a gift: ${data.giftName} (x${data.repeatCount})`);
+    io.emit('tiktokGift', { user: data.nickname, gift: data.giftName, count: data.repeatCount });
 });
 
 // Handle TikTok follows
 tiktokLiveConnection.on('follow', data => {
-    console.log(`TikTok ${data.uniqueId} followed!`);
-    io.emit('tiktokFollow', { user: data.uniqueId });
+    console.log(`TikTok ${data.nickname} followed!`);
+    io.emit('tiktokFollow', { user: data.nickname });
 });
 
 // Handle Twitch events
@@ -77,8 +96,8 @@ twitchClient.on('message', (channel, tags, message, self) => {
 });
 
 twitchClient.on('subscription', (channel, username, method, message, userstate) => {
-    console.log(`Twitch ${username} subscribed!`);
-    io.emit('twitchSub', { user: username });
+    console.log(`Twitch ${userstate['display-name']} subscribed!`);
+    io.emit('twitchSub', { user: userstate['display-name'] });
 });
 
 // Clean up on exit
