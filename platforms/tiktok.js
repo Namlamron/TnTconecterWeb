@@ -1,33 +1,35 @@
 const { WebcastPushConnection } = require('tiktok-live-connector');
 
-function initializeTikTok(io, tiktokUsername) {
-    let tiktokLiveConnection = new WebcastPushConnection(tiktokUsername);
+let tiktokLiveConnection; // Move this outside to make it accessible in both initializeTikTok and disconnect
+
+async function initializeTikTok(io, tiktokUsername) {
+    tiktokLiveConnection = new WebcastPushConnection(tiktokUsername);
 
     // Function to initialize and manage the TikTok connection
-    function connectToTikTok() {
-        tiktokLiveConnection.connect()
-            .then(state => {
-                console.info(`Connected to TikTok roomId ${state.roomId}`);
-                io.emit('status', { message: "Connected to TikTok" });
-            })
-            .catch(err => {
-                console.error('Failed to connect to TikTok', err);
-                setTimeout(connectToTikTok, 30000);  // Retry after 30 seconds if initial connection fails
-            });
+    async function connectToTikTok() {
+        try {
+            const state = await tiktokLiveConnection.connect();
+            console.info(`Connected to TikTok roomId ${state.roomId}`);
+            io.emit('status', { message: "Connected to TikTok" });
+        } catch (err) {
+            console.error('Failed to connect to TikTok', err);
+            setTimeout(connectToTikTok, 30000);  // Retry after 30 seconds if initial connection fails
+        }
     }
 
     // Initial connection
     connectToTikTok();
 
     // Reset connection every 20 minutes
-    setInterval(() => {
+    setInterval(async () => {
         console.info("Resetting TikTok connection...");
-        tiktokLiveConnection.disconnect()
-            .then(() => connectToTikTok())
-            .catch(err => {
-                console.error("Failed to reset TikTok connection:", err);
-                setTimeout(connectToTikTok, 30000);  // Retry after 30 seconds if disconnection fails
-            });
+        try {
+            await tiktokLiveConnection.disconnect();
+            connectToTikTok();
+        } catch (err) {
+            console.error("Failed to reset TikTok connection:", err);
+            setTimeout(connectToTikTok, 30000);  // Retry after 30 seconds if disconnection fails
+        }
     }, 1200000); // 20 minutes in milliseconds
 
     // Handle TikTok events
@@ -48,8 +50,15 @@ function initializeTikTok(io, tiktokUsername) {
 }
 
 // Disconnect function to clean up on exit
-function disconnect() {
-    tiktokLiveConnection.disconnect();
+async function disconnect() {
+    if (tiktokLiveConnection) {
+        try {
+            await tiktokLiveConnection.disconnect();
+            console.info("Disconnected from TikTok.");
+        } catch (err) {
+            console.error("Failed to disconnect TikTok:", err);
+        }
+    }
 }
 
 module.exports = (io, tiktokUsername) => {
