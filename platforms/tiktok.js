@@ -1,55 +1,16 @@
-const { WebcastPushConnection } = require('tiktok-live-connector');
+const { getConnection } = require('./tiktokConnection'); // Import the shared connection
 
 let tiktokLiveConnection;
-let isConnecting = false; // Flag to prevent multiple connection attempts
 
 async function initializeTikTok(io, tiktokUsername) {
-    tiktokLiveConnection = new WebcastPushConnection(tiktokUsername);
+    tiktokLiveConnection = getConnection();
 
-    async function connectToTikTok() {
-        if (isConnecting) {
-            console.info("Connection attempt already in progress. Skipping...");
-            return;
-        }
-
-        isConnecting = true; // Set the flag to indicate we're attempting a connection
-
-        try {
-            // Remove all previous listeners to avoid duplication
-            tiktokLiveConnection.removeAllListeners();
-
-            const state = await tiktokLiveConnection.connect();
-            console.info(`Connected to TikTok roomId ${state.roomId}`);
-            io.emit('status', { message: "Connected to TikTok" });
-        } catch (err) {
-            console.error('Failed to connect to TikTok', err);
-            setTimeout(connectToTikTok, 30000); // Retry after 30 seconds if initial connection fails
-        } finally {
-            isConnecting = false; // Reset the flag after attempt
-        }
+    if (!tiktokLiveConnection) {
+        console.error("TikTok connection is not available.");
+        return;
     }
 
-    // Initial connection
-    connectToTikTok();
-
-    // Recursive reconnect function to reset connection every 20 minutes
-    async function scheduleReconnect() {
-        console.info("Resetting TikTok connection...");
-        try {
-            await tiktokLiveConnection.disconnect();
-            await connectToTikTok(); // Wait until reconnect is successful
-        } catch (err) {
-            console.error("Failed to reset TikTok connection:", err);
-            setTimeout(scheduleReconnect, 30000); // Retry after 30 seconds if reset fails
-            return;
-        }
-        setTimeout(scheduleReconnect, 1200000); // Schedule the next reset in 20 minutes
-    }
-    
-    // Start the reconnect loop
-    scheduleReconnect();
-
-    // Handle TikTok events with error handling for each event listener
+    // Handle TikTok events
     tiktokLiveConnection.on('chat', data => {
         try {
             console.log(`TikTok ${data.nickname} says: ${data.comment}`);
