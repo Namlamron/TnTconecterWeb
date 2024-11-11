@@ -2,7 +2,7 @@ const { getConnection } = require('./TiktokConnection'); // Import the shared co
 
 let tiktokLiveConnection;
 
-async function initializeTikTok(io, tiktokUsername) {
+async function initializeTikTok(io, _tiktokUsername) {
     tiktokLiveConnection = getConnection();
 
     if (!tiktokLiveConnection) {
