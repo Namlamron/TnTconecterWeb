@@ -1,4 +1,4 @@
-// tiktokConnection.js
+// TiktokConnection.js
 const { WebcastPushConnection } = require('tiktok-live-connector');
 
 let tiktokLiveConnection;

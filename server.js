@@ -3,10 +3,10 @@ require('dotenv').config();  // Load .env file
 const express = require('express');
 const http = require('http');
 const socketIo = require('socket.io');
-const { connectToTikTok } = require('./platforms/tiktokConnection');  // Import the connection module
-const tiktok = require('./platforms/tiktok');  // Regular TikTok connection
-const tiktokBot = require('./platforms/tiktokBot');  // TikTok bot module
-const twitch = require('./platforms/twitch');  // Twitch connection
+const { connectToTikTok } = require('./platforms/TiktokConnection');  // Import the connection module
+const tiktok = require('./platforms/Tiktok');  // Regular TikTok connection
+const TiktokCommands = require('./platforms/TiktokCommands');  // TikTok bot module
+const twitch = require('./platforms/Twitch');  // Twitch connection
 
 const app = express();
 const server = http.createServer(app);
@@ -25,14 +25,14 @@ connectToTikTok(tiktokUsername);  // This connects to TikTok once
 
 // Initialize TikTok and TikTok Bot connections
 tiktok(io, tiktokUsername);  // Regular TikTok connection
-tiktokBot(io, tiktokUsername);  // TikTok bot functionality
+TiktokCommands(io, tiktokUsername);  // TikTok bot functionality
 twitch(io, twitchUsername, twitchOauthToken);  // Twitch connection
 
 // Clean up on exit
 process.on('SIGINT', () => {
     console.log('Disconnecting...');
     tiktok(io, tiktokUsername).disconnect();  // Disconnect TikTok
-    tiktokBot(io, tiktokUsername).disconnect();  // Disconnect TikTok bot
+    TiktokCommands(io, tiktokUsername).disconnect();  // Disconnect TikTok bot
     twitch.disconnect();  // Disconnect Twitch
     process.exit();
 });

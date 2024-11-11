@@ -1,4 +1,4 @@
-const { getConnection } = require('./tiktokConnection'); // Import the shared connection
+const { getConnection } = require('./TiktokConnection'); // Import the shared connection
 
 let tiktokLiveConnection;
 
