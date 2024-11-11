@@ -1,6 +1,8 @@
 const { WebcastPushConnection } = require('tiktok-live-connector');
+const WebSocket = require('ws'); // Import WebSocket for vnayn
 
 let tiktokLiveConnection;
+let vnaynSocket;
 let isConnecting = false; // Flag to prevent multiple connection attempts
 
 async function initializeTikTok(io, tiktokUsername) {
@@ -49,32 +51,72 @@ async function initializeTikTok(io, tiktokUsername) {
     // Start the reconnect loop
     scheduleReconnect();
 
-    // Handle TikTok events with error handling for each event listener
+    // Initialize vnayn WebSocket connection
+    initializeVnaynConnection();
+
+    // Handle TikTok chat messages and commands
     tiktokLiveConnection.on('chat', data => {
         try {
-            console.log(`TikTok ${data.nickname} says: ${data.comment}`);
-            io.emit('tiktokChat', { user: data.nickname, message: data.comment });
+            const message = data.comment;
+            const username = data.nickname;
+            console.log(`TikTok ${username} says: ${message}`);
+            io.emit('tiktokChat', { user: username, message });
+
+            // Check if the message starts with a '!'
+            if (message.startsWith('!')) {
+                const command = message.slice(1).toLowerCase(); // Remove the '!' and convert to lowercase
+                let response = 'Command not recognized'; // Default response
+
+                // Handle known commands
+                switch (command) {
+                    case 'hello':
+                        response = 'Hello, how are you?';
+                        break;
+                    case 'uptime':
+                        response = 'The stream has been live for 3 hours.'; // Replace with actual logic
+                        break;
+                    case 'commands':
+                        response = 'Available commands: !hello, !uptime, !boop';
+                        break;
+                    case 'boop':
+                        // Send "Boop" message to WebSocket
+                        if (vnaynSocket && vnaynSocket.readyState === WebSocket.OPEN) {
+                            vnaynSocket.send('Boop');
+                            response = 'Boop sent to WebSocket!';
+                        } else {
+                            response = 'WebSocket is not connected!';
+                        }
+                        break;
+                    default:
+                        response = `Unknown command: !${command}`;
+                        break;
+                }
+
+                // Respond to the command in chat and send to the frontend
+                io.emit('tiktokChat', { user: username, message: response });
+                console.log(`Responding to ${username} with: ${response}`);
+            }
         } catch (err) {
             console.error("Error in chat event handler:", err);
         }
     });
+}
 
-    tiktokLiveConnection.on('gift', data => {
-        try {
-            console.log(`TikTok ${data.nickname} sent a gift: ${data.giftName} (x${data.repeatCount})`);
-            io.emit('tiktokGift', { user: data.nickname, gift: data.giftName, count: data.repeatCount });
-        } catch (err) {
-            console.error("Error in gift event handler:", err);
-        }
+// Initialize vnayn WebSocket connection
+function initializeVnaynConnection() {
+    vnaynSocket = new WebSocket('ws://localhost:21213/vnyan'); // Connect to vnayn
+
+    vnaynSocket.on('open', () => {
+        console.info("Connected to vnayn WebSocket server.");
     });
 
-    tiktokLiveConnection.on('follow', data => {
-        try {
-            console.log(`TikTok ${data.nickname} followed!`);
-            io.emit('tiktokFollow', { user: data.nickname });
-        } catch (err) {
-            console.error("Error in follow event handler:", err);
-        }
+    vnaynSocket.on('close', () => {
+        console.warn("Disconnected from vnayn WebSocket server. Reconnecting in 30 seconds...");
+        setTimeout(initializeVnaynConnection, 30000); // Reconnect after 30 seconds if disconnected
+    });
+
+    vnaynSocket.on('error', (err) => {
+        console.error("Error with vnayn WebSocket:", err);
     });
 }
 
@@ -87,6 +129,11 @@ async function disconnect() {
         } catch (err) {
             console.error("Failed to disconnect TikTok:", err);
         }
+    }
+
+    if (vnaynSocket) {
+        vnaynSocket.close();
+        console.info("Disconnected from vnayn WebSocket.");
     }
 }
 
