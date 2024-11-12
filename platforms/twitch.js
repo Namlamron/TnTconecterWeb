@@ -1,39 +1,44 @@
 const tmi = require('tmi.js');
-const WebSocket = require('ws');  // Import the WebSocket library
+const WebSocket = require('ws');
+const dgram = require('dgram');
 
-let twitchClient;  // Declare globally for use in disconnect
-let VnaynWebSocket;  // Declare VnaynWebSocket
+let twitchClient;
+let VnaynWebSocket;
+const oscClient = dgram.createSocket('udp4');
+
+const VRCHAT_OSC_PORT = 9000;
+const VRCHAT_OSC_HOST = '127.0.0.1';
 
 function initializeTwitch(io, twitchUsername, twitchOauthToken) {
     twitchClient = new tmi.Client({
         options: { debug: true },
         identity: {
             username: twitchUsername,
-            password: twitchOauthToken,  // Use OAuth token from .env
+            password: twitchOauthToken,
         },
         channels: [twitchUsername]
     });
 
-    // Create WebSocket connection to ws://localhost:21213/vnyan
-    VnaynWebSocket = new WebSocket('ws://localhost:21213/vnyan');
+    function connectVnaynWebSocket() {
+        VnaynWebSocket = new WebSocket('ws://localhost:21213/vnyan');
 
-    VnaynWebSocket.on('open', () => {
-        console.log('Connected to VnaynWebSocket');
-    });
+        VnaynWebSocket.on('open', () => {
+            console.log('Connected to VnaynWebSocket');
+        });
 
-    VnaynWebSocket.on('error', (err) => {
-        console.error('VnaynWebSocket error:', err);
-    });
+        VnaynWebSocket.on('error', (err) => {
+            console.error('VnaynWebSocket error');  // Log only the main error message
+        });
 
-    // Reconnect WebSocket if connection is lost
-    VnaynWebSocket.on('close', () => {
-        console.log('VnaynWebSocket disconnected, reconnecting...');
-        setTimeout(() => {
-            VnaynWebSocket = new WebSocket('ws://localhost:21213/vnyan'); // Reconnect
-        }, 5000); // Retry every 5 seconds
-    });
+        VnaynWebSocket.on('close', () => {
+            console.log('VnaynWebSocket disconnected, reconnecting in 1 minute...');
+            setTimeout(connectVnaynWebSocket, 60000);  // Retry every minute
+        });
+    }
 
-    // Connect Twitch client
+    // Call the function to initiate the WebSocket connection
+    connectVnaynWebSocket();
+
     twitchClient.connect()
         .then(() => {
             console.log("Connected to Twitch!");
@@ -41,28 +46,23 @@ function initializeTwitch(io, twitchUsername, twitchOauthToken) {
         })
         .catch(err => console.error("Failed to connect to Twitch:", err));
 
-    // Handle Twitch subscriptions
     twitchClient.on('subscription', (channel, username, method, message, userstate) => {
         console.log(`Twitch ${userstate['display-name']} subscribed!`);
         io.emit('twitchSub', { user: userstate['display-name'] });
     });
 
-    // Handle Twitch chat messages and commands
     twitchClient.on('message', (channel, tags, message, self) => {
-        if (self) return; // Ignore echoed messages
+        if (self) return;
 
-        // Check if the message starts with a '!'
         if (message.startsWith('!')) {
-            const command = message.slice(1).toLowerCase(); // Remove the '!' and convert to lowercase
-            let response = 'Command not recognized'; // Default response
+            const command = message.slice(1).toLowerCase();
+            let response = 'Command not recognized';
 
-            // Handle known commands
             switch (command) {
                 case 'hello':
                     response = 'Hello, how are you?';
                     break;
                 case 'boop':
-                    // Ensure WebSocket is open before sending the message
                     if (VnaynWebSocket.readyState === WebSocket.OPEN) {
                         VnaynWebSocket.send("boop");
                         console.log("Sent 'boop' command to VnaynWebSocket");
@@ -80,22 +80,38 @@ function initializeTwitch(io, twitchUsername, twitchOauthToken) {
                     }
                     response = `HI how dwad`;
                     break;
+                case 'wave':
+                    sendVRChatOSC('/avatar/parameters/Wave', 1);
+                    response = `Waving in VRChat!`;
+                    break;
+                case 'jump':
+                    sendVRChatOSC('/avatar/parameters/Jump', 1);
+                    response = `Jumping in VRChat!`;
+                    break;
                 default:
                     response = `Unknown command: !${command}`;
                     break;
             }
 
-            // Respond to the command
             twitchClient.say(channel, `${tags['display-name']}, ${response}`);
             io.emit('twitchChat', { user: tags['display-name'], message: response });
         } else {
-            // Regular chat message
             io.emit('twitchChat', { user: tags['display-name'], message: message });
         }
     });
 }
 
-// Disconnect function to clean up on exit
+function sendVRChatOSC(address, value) {
+    const message = Buffer.from(`${address} ${value}`);
+    oscClient.send(message, VRCHAT_OSC_PORT, VRCHAT_OSC_HOST, (err) => {
+        if (err) {
+            console.error('Failed to send OSC message:', err);
+        } else {
+            console.log(`OSC message sent: ${address} = ${value}`);
+        }
+    });
+}
+
 function disconnect() {
     if (twitchClient) {
         twitchClient.disconnect();
@@ -103,6 +119,7 @@ function disconnect() {
     } else {
         console.error("Twitch client is not initialized");
     }
+    oscClient.close();
 }
 
 module.exports = (io, twitchUsername, twitchOauthToken) => {
