@@ -52,7 +52,7 @@ async function initializeTikTok(io, tiktokUsername) {
     scheduleReconnect();
 
     // Initialize vnayn WebSocket connection
-    initializeVnaynConnection();
+   // initializeVnaynConnection();
 
     // Handle TikTok chat messages and commands
     tiktokLiveConnection.on('chat', data => {
@@ -72,20 +72,10 @@ async function initializeTikTok(io, tiktokUsername) {
                     case 'hello':
                         response = 'Hello, how are you?';
                         break;
-                    case 'uptime':
-                        response = 'The stream has been live for 3 hours.'; // Replace with actual logic
-                        break;
-                    case 'commands':
-                        response = 'Available commands: !hello, !uptime, !boop';
-                        break;
                     case 'boop':
                         // Send "Boop" message to WebSocket
-                        if (vnaynSocket && vnaynSocket.readyState === WebSocket.OPEN) {
-                            vnaynSocket.send('Boop');
-                            response = 'Boop sent to WebSocket!';
-                        } else {
-                            response = 'WebSocket is not connected!';
-                        }
+                        if (vnaynSocket && vnaynSocket.readyState === WebSocket.OPEN)
+                        vnaynSocket.send('Boop');
                         break;
                     default:
                         response = `Unknown command: !${command}`;

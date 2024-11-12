@@ -2,6 +2,7 @@ const tmi = require('tmi.js');
 const WebSocket = require('ws');  // Import the WebSocket library
 
 let twitchClient;  // Declare globally for use in disconnect
+let VnaynWebSocket;  // Declare VnaynWebSocket
 
 function initializeTwitch(io, twitchUsername, twitchOauthToken) {
     twitchClient = new tmi.Client({
@@ -14,21 +15,21 @@ function initializeTwitch(io, twitchUsername, twitchOauthToken) {
     });
 
     // Create WebSocket connection to ws://localhost:21213/vnyan
-    const ws = new WebSocket('ws://localhost:21213/vnyan');
+    VnaynWebSocket = new WebSocket('ws://localhost:21213/vnyan');
 
-    ws.on('open', () => {
-        console.log('Connected to WebSocket');
+    VnaynWebSocket.on('open', () => {
+        console.log('Connected to VnaynWebSocket');
     });
 
-    ws.on('error', (err) => {
-        console.error('WebSocket error:', err);
+    VnaynWebSocket.on('error', (err) => {
+        console.error('VnaynWebSocket error:', err);
     });
 
     // Reconnect WebSocket if connection is lost
-    ws.on('close', () => {
-        console.log('WebSocket disconnected, reconnecting...');
+    VnaynWebSocket.on('close', () => {
+        console.log('VnaynWebSocket disconnected, reconnecting...');
         setTimeout(() => {
-            ws = new WebSocket('ws://localhost:21213/vnyan'); // Reconnect
+            VnaynWebSocket = new WebSocket('ws://localhost:21213/vnyan'); // Reconnect
         }, 5000); // Retry every 5 seconds
     });
 
@@ -60,18 +61,24 @@ function initializeTwitch(io, twitchUsername, twitchOauthToken) {
                 case 'hello':
                     response = 'Hello, how are you?';
                     break;
-                case 'uptime':
-                    response = 'The stream has been live for 3 hours.'; // Replace with actual logic
-                    break;
-                case 'commands':
-                    response = 'Available commands: !hello, !uptime, !boop';
-                    break;
                 case 'boop':
-                    // Send "Boop" message to WebSocket
-                    if (ws.readyState === WebSocket.OPEN) {
-                        ws.send('Boop ');
-                        response = 'Get booped bitch';
+                    // Ensure WebSocket is open before sending the message
+                    if (VnaynWebSocket.readyState === WebSocket.OPEN) {
+                        VnaynWebSocket.send("boop");
+                        console.log("Sent 'boop' command to VnaynWebSocket");
+                    } else {
+                        console.error('WebSocket is not open. Message not sent.');
                     }
+                    response = `HI how dwad`;
+                    break;
+                case 'meme':
+                    if (VnaynWebSocket.readyState === WebSocket.OPEN) {
+                        VnaynWebSocket.send(message);
+                        console.log(`Sent 'meme' command to VnaynWebSocket: ${message}`);
+                    } else {
+                        console.error('WebSocket is not open. Message not sent.');
+                    }
+                    response = `HI how dwad`;
                     break;
                 default:
                     response = `Unknown command: !${command}`;
